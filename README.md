@@ -23,7 +23,7 @@ class A(Dependency):
         
     @classmethod
     def instantiate(cls):
-        return B(os.environ.get("NAME", "Foo bar"))
+        return A(os.environ.get("NAME", "Foo bar"))
 
 class B(Dependency):
 
