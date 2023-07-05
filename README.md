@@ -19,7 +19,6 @@ from type_dep import Dependency, dependencyinjected, Context
 
 counter = 0
 
-
 class A(Dependency):
     def __init__(self, name: str):
         self.name = name
@@ -29,7 +28,6 @@ class A(Dependency):
         global counter
         counter += 1
         return A(f"{counter}")
-
 
 class B(Dependency):
 
@@ -57,11 +55,13 @@ class B(Dependency):
     def scoped_get_detail(self, a: A, context: Context):
         """
         When a `Context` argument is passed,
-        the dependencies are stored in a context that gets destroyed after every method call.
+        the dependencies are stored in a context that gets destroyed after every method call, unless
+        an externally instantiated `Context` is passed to this function. For the later
+        case, the `Context` object will be destroyed when it gets out of scope, as in normal python.
+
         NOTE: The type hints on the parameters are a must
         """
         return {"name": a.name, "sex": self.sex}
-
 
 @dependencyinjected
 def run(males: int, females: int, a: A, greeting: str, b: B):
@@ -78,7 +78,6 @@ def run(males: int, females: int, a: A, greeting: str, b: B):
     print(f"males: {males}, females: {females}, greeting: {greeting}, a.name: {a.name}, b.sex: {b.sex}")
     print(f'{b.get_detail()}\n')
 
-
 @dependencyinjected
 def scoped_run(males: int, females: int, a: A, greeting: str, b: B, context: Context):
     """
@@ -86,13 +85,14 @@ def scoped_run(males: int, females: int, a: A, greeting: str, b: B, context: Con
     `a` and `b` will be instantiated and injected into the function at runtime
 
     When a `Context` argument is passed,
-    the dependencies are stored in a context that gets destroyed after every function call.
+    the dependencies are stored in a context that gets destroyed after every function call, unless
+    an externally instantiated `Context` is passed to this function. For the later
+    case, the `Context` object will be destroyed when it gets out of scope, as in normal python.
 
     NOTE: The type hints on the parameters are a must
     """
     print(f"scoped: males: {males}, females: {females}, greeting: {greeting}, a.name: {a.name}, b.sex: {b.sex}")
     print(f'scoped: {b.scoped_get_detail()}\n')
-
 
 if __name__ == '__main__':
     counter = 0
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     for _ in range(3):
         scoped_run(6, 56, greeting="hey")
 
-        # scoped: males: 6, females: 56, greeting: hey, a.name: 3, b.sex: female
+    # scoped: males: 6, females: 56, greeting: hey, a.name: 3, b.sex: female
     # scoped: {'name': '4', 'sex': 'female'}
     # 
     # scoped: males: 6, females: 56, greeting: hey, a.name: 5, b.sex: female
