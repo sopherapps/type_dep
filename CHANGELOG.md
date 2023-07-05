@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.0.2] - 2023-05-07
+
+### Added
+
+- Scoped Dependency injection
+- `Context` made public
+
+### Changed
+
+### Fixed
+
 ## [0.0.1] - 2022-05-12
 
 ### Added

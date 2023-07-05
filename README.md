@@ -15,15 +15,21 @@ pip install type_dep
 
 ```python
 import os
-from type_dep import Dependency, dependencyinjected
+from type_dep import Dependency, dependencyinjected, Context
+
+counter = 0
+
 
 class A(Dependency):
     def __init__(self, name: str):
         self.name = name
-        
+
     @classmethod
     def instantiate(cls):
-        return A(os.environ.get("NAME", "Foo bar"))
+        global counter
+        counter += 1
+        return A(f"{counter}")
+
 
 class B(Dependency):
 
@@ -39,22 +45,81 @@ class B(Dependency):
         """
         A method which uses dependency injection
         `a` will be instantiated and injected into this method at runtime.
+        By default, these dependencies are stored in a global context.
+        Subsequent method calls will use the instances of the dependencies that were
+        instantiated on the first run.
+
         NOTE: The type hints on the parameters are a must
         """
         return {"name": a.name, "sex": self.sex}
 
+    @dependencyinjected
+    def scoped_get_detail(self, a: A, context: Context):
+        """
+        When a `Context` argument is passed,
+        the dependencies are stored in a context that gets destroyed after every method call.
+        NOTE: The type hints on the parameters are a must
+        """
+        return {"name": a.name, "sex": self.sex}
+
+
 @dependencyinjected
 def run(males: int, females: int, a: A, greeting: str, b: B):
     """
-    Just some function that is dependency injected. 
+    Just some function that is dependency injected.
     `a` and `b` will be instantiated and injected into the function at runtime
+
+    By default, these dependencies are stored in a global context.
+    Subsequent method calls will use the instances of the dependencies that were
+    instantiated on the first run.
+
     NOTE: The type hints on the parameters are a must
     """
-    print(f"males: {males}, females: {females}, greeting: {greeting}, a.name: {a.name}, b.sex: {b.sex}\n")
-    print(b.get_detail())
+    print(f"males: {males}, females: {females}, greeting: {greeting}, a.name: {a.name}, b.sex: {b.sex}")
+    print(f'{b.get_detail()}\n')
+
+
+@dependencyinjected
+def scoped_run(males: int, females: int, a: A, greeting: str, b: B, context: Context):
+    """
+    Just some function that is dependency injected.
+    `a` and `b` will be instantiated and injected into the function at runtime
+
+    When a `Context` argument is passed,
+    the dependencies are stored in a context that gets destroyed after every function call.
+
+    NOTE: The type hints on the parameters are a must
+    """
+    print(f"scoped: males: {males}, females: {females}, greeting: {greeting}, a.name: {a.name}, b.sex: {b.sex}")
+    print(f'scoped: {b.scoped_get_detail()}\n')
+
 
 if __name__ == '__main__':
-    run(6, 56, greeting="hey")
+    counter = 0
+
+    for _ in range(3):
+        run(6, 56, greeting="hey")
+
+    # males: 6, females: 56, greeting: hey, a.name: 1, b.sex: female
+    # {'name': '2', 'sex': 'female'}
+    # 
+    # males: 6, females: 56, greeting: hey, a.name: 1, b.sex: female
+    # {'name': '2', 'sex': 'female'}
+    # 
+    # males: 6, females: 56, greeting: hey, a.name: 1, b.sex: female
+    # {'name': '2', 'sex': 'female'}
+
+    for _ in range(3):
+        scoped_run(6, 56, greeting="hey")
+
+        # scoped: males: 6, females: 56, greeting: hey, a.name: 3, b.sex: female
+    # scoped: {'name': '4', 'sex': 'female'}
+    # 
+    # scoped: males: 6, females: 56, greeting: hey, a.name: 5, b.sex: female
+    # scoped: {'name': '6', 'sex': 'female'}
+    # 
+    # scoped: males: 6, females: 56, greeting: hey, a.name: 7, b.sex: female
+    # scoped: {'name': '8', 'sex': 'female'}
 ```
 
 ## Why use type hints
