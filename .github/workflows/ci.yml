@@ -1,11 +1,21 @@
 on:
-  pull_request:
+  push:
+    branches:
+      - master
     paths:
       - "**.py"
+      - "requirements.txt"
+      - ".gitignore"
       - ".github/workflows/**"
+      - "README.md"
+    tags:
+      - "v*"
+    pull_request:
+
 jobs:
-  runner-job:
-    runs-on: ubuntu-18.04
+
+  test:
+    runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -13,10 +23,38 @@ jobs:
       - name: Install python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.9.12"
+          python-version: "3.9"
 
       - name: install dependencies
         run: pip install -r requirements.txt
 
       - name: Run tests
         run: python -m unittest
+
+  build:
+    needs: test
+    runs-on: ubuntu-20.04
+    if: "startsWith(github.ref, 'refs/tags/')"
+    steps:
+      - name: Checkout the commit
+        uses: actions/checkout@v2
+
+      - name: Install python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          cd $GITHUB_WORKSPACE
+          python -m pip install --upgrade pip
+          python --version
+          pip install -r requirements.txt
+
+      - name: Build
+        run: |
+          python setup.py sdist bdist_wheel
+
+      - name: Upload to pypi
+        run: |
+          twine upload -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} dist/*
