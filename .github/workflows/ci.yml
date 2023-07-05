@@ -10,7 +10,7 @@ on:
       - "README.md"
     tags:
       - "v*"
-    pull_request:
+  pull_request:
 
 jobs:
 
